@@ -3,15 +3,20 @@ html {
 }
 
 body {
+	display: flex;
 	background-color: black;
 	box-sizing: border-box;
 	color: white;
 	align-items: center;
 	align-content: center;
 	justify-content: center;
-	text-align: center;
-	height: 100vh;
 	width: 100vw;
+	height: 100vh;
+	text-align: center;
+	/* grid-template-columns: 100%; */
+	/* grid-template-rows: 100%; */
+	/* margin: 0; */
+	/* padding: 0; */
 }
 
 
@@ -44,33 +49,25 @@ body {
 }
 
 .board {
-	display: block;
-	margin: 0;
-	background-color: black;
-	max-width: 500px;
-	width: 96%;
-}
-
-.row {
-	display: block;
-	width: 100%;
-	margin: 0;
-	padding: 0;
+	width: 600px;
+		height: 600px;
+		margin: 0 auto;
+	  background-color: white;
+	  color: #fff;
+	  border: none;
+		display: grid;
+		grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+		grid-gap: 10px;
 }
 
 .square {
-	display: inline-block;
-	text-align: center;
+	font-family: Helvetica;
+	font-weight: bold;
+	font-size: 4em;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 	background-color: black;
-	border: solid 0.3rem white;
-	max-width: 130px;
-	width: 30%;
-	height: 30vw;
-	max-height: 130px;
-	font-size: 25vw;
-	padding: 0;
-	overflow: hidden;
-	vertical-align: -4px;
 }
 /*
 .top {

@@ -1,148 +1,177 @@
+let origBoard;
+let p1;
+let p2;
+const winSets = [
+	[0, 1, 2],
+	[3, 4, 5],
+	[6, 7, 8],
+	[0, 3, 6],
+	[1, 4, 7],
+	[2, 5, 8],
+	[0, 4, 8],
+	[6, 4, 2]
+]
+count = 0;
+const squares = document.querySelectorAll('div.square');
 
-let p1 = {name:'Player 1'};
-let p2 = {name:'Computer'};
-let players = [p1,p2];
-let allMoves = [];
+squares.forEach(sq => sq.id = '' + count++);
 
 const popup = document.getElementById('popup');
 const chooseMark = document.querySelectorAll('#popup>div');
+let firstUp = Math.floor(Math.random()*2) ? 'p1' : 'p2';
 
-//randomly choose who goes first
+let startGame = function startGame(r) {
+  if (r) console.log(r);
+  count = 0;
+  let first = firstUp;
 
-let firstUp = Math.floor(Math.random()*2) ? p1 : p2;
-let upNow = firstUp;
+  chooseMark.forEach(e => {
+  	e.onclick = () => {
+  		p1 = e.textContent;
+  		p2 = (e.textContent === 'X' ? 'O' : 'X');
+  		popup.className = 'step2';
+  		popup.textContent = 'Good luck, Player1!';
 
-// ask the player to choose 'x' or 'o'
+  		function whoIsFirst(){
+  			popup.textContent = (first === 'p1' ? "You're " : p2 + ' is') + ' up first.';
+  			setTimeout(closePopUp, 1500);
+  		}
 
-chooseMark.forEach(e => {
-	e.onclick = () => {
-		p1.value = e.textContent;
-		p2.value = (e.textContent === 'X' ? 'O' : 'X');
-		popup.className = 'step2';
-		popup.textContent = 'Good luck, ' + p1.name + '!';
+  		function closePopUp(){
+  			popup.style.display = 'none';
+        goOn();
+  		}
+  		setTimeout(whoIsFirst, 1500);
+  	};
+  });
 
-		function whoIsFirst(){
-			popup.textContent = (upNow===p1 ? "You're " : p2.name + ' is') + ' up first!';
-			setTimeout(togglePopUp, 500);//1500
+  function goOn(){
+
+  	origBoard = Array.from(Array(9).keys());
+  	for (let i = 0; i < squares.length; i++) {
+  		squares[i].innerText = '';
+  		squares[i].classList.remove('win');
+      squares[i].style.color = 'white';
+  		squares[i].addEventListener('click', p1Move);
+  	}
+    if(first === 'p2') makeMove('4', p2);
+  }
+}
+
+function p1Move(square) {
+	if (typeof origBoard[square.target.id] == 'number') {
+		makeMove(square.target.id, p1)
+		if (!checkWin(origBoard, p1) && !tieGame()) makeMove(bestSpot(), p2);
+	}
+}
+
+function makeMove(squareId, player) {
+	origBoard[squareId] = player;
+	document.getElementById(squareId).innerText = player;
+	let gameWon = checkWin(origBoard, player)
+	if (gameWon) gameOver(gameWon)
+}
+
+function checkWin(board, player) {
+	let plays = board.reduce((a, e, i) =>
+		(e === player) ? a.concat(i) : a, []);
+	let gameWon = null;
+	for (let [index, win] of winSets.entries()) {
+		if (win.every(elem => plays.indexOf(elem) > -1)) {
+			gameWon = {index: index, player: player};
+			break;
+		}
+	}
+	return gameWon;
+}
+
+function gameOver(gameWon) {
+	for (let index of winSets[gameWon.index]) {
+		document.getElementById(index).className += ' win';
+	}
+	for (let i = 0; i < squares.length; i++) {
+		squares[i].removeEventListener('click', p1Move);
+	}
+	declareWinner(gameWon.player == p1 ? "You win!" : "You lose.");
+  //setTimeout(startGame, 2000);
+  startGame();
+}
+
+function declareWinner(msg) {
+	document.querySelector("#popup").style.display = "block";
+	document.querySelector("#popup").textContent = msg;
+  setTimeout(startGame, 2000);
+
+}
+
+function emptySquares() {
+	return origBoard.filter(s => typeof s == 'number');
+}
+
+function bestSpot() {
+	return minimax(origBoard, p2).index;
+}
+
+function tieGame() {
+	if (emptySquares().length == 0) {
+		for (let i = 0; i < squares.length; i++) {
+			squares[i].style.color = "grey";
+			squares[i].removeEventListener('click', p1Move);
+		}
+		declareWinner("Tie Game!")
+		return true;
+	}
+	return false;
+}
+
+function minimax(newBoard, player) {
+	let availSpots = emptySquares();
+
+	if (checkWin(newBoard, p1)) {
+		return {score: -10};
+	} else if (checkWin(newBoard, p2)) {
+		return {score: 10};
+	} else if (availSpots.length === 0) {
+		return {score: 0};
+	}
+	let moves = [];
+	for (let i = 0; i < availSpots.length; i++) {
+		let move = {};
+		move.index = newBoard[availSpots[i]];
+		newBoard[availSpots[i]] = player;
+
+		if (player == p2) {
+			let result = minimax(newBoard, p1);
+			move.score = result.score;
+		} else {
+			let result = minimax(newBoard, p2);
+			move.score = result.score;
 		}
 
-		function togglePopUp(){
-			let x = popup.style.display;
-			popup.style.display = (x==='none' ? 'block' : 'none');
+		newBoard[availSpots[i]] = move.index;
 
-			if(upNow === p2) p2.takeTurn();
-		}
-		setTimeout(whoIsFirst, 500);//2000
-	};
-});
+		moves.push(move);
+	}
 
-let squares = document.querySelectorAll('div.square');
-
-let count = 0;
-
-//set up board, and what happens when p1 selects a square...
-
-function setupBoard(){
-	p1.moves=[];
-	p2.moves = [];
-	squares.forEach(sq => {
-		sq.textContent = '';
-		sq.value='';
-		sq.id = 'sq'+count++;
-		sq.onclick = () => {
-			if (p1 === upNow && sq.textContent === ''){//if p1's turn, and square is empty...
-				sq.value = p1.value;
-				sq.textContent = p1.value;
-				p1.moves.push(sq.id);
-				allMoves.push(sq.id);
-
-				if (testWin(p1) !== ('tie'||'win')) togglePlayer();
+	let bestMove;
+	if(player === p2) {
+		let bestScore = -10000;
+		for(let i = 0; i < moves.length; i++) {
+			if (moves[i].score > bestScore) {
+				bestScore = moves[i].score;
+				bestMove = i;
 			}
 		}
-	})
-};
-setupBoard();
-
-function togglePlayer(){
-	upNow = (upNow === p1 ? p2 : p1);
-	if(upNow === p2){
-		p2.takeTurn();
-	}
-}
-
-p2.takeTurn = function(){
-
-	//if (test for win) then either return, or toggle
-	let bestPlay = findBestPlay()[0];
-	let p2Move = document.getElementById(bestPlay);
-	if (!p2Move) return;
-	p2Move.textContent = p2.value;
-	p2Move.value = p2.value;
-	p2.moves.push(bestPlay);
-	allMoves.push(bestPlay);
-	if (testWin(p2) !== ('tie'||'win')) togglePlayer();
-}
-
-function findBestPlay(){
-	let empty = [];
-	squares.forEach(ea => {
-		if(ea.textContent === '') empty.push(ea.id);
-	});
-	return empty;
-}
-
-function testWin(player){
-	let winner;
-	let moves = player.moves;
-
-	function isMatch(cell){
-		return cell.value ===player.value;
-	}
-
-	winSets.map (x=> {
-		if(x.every(isMatch)) {
-			winner = 'win';
-			gameWon({name : player.name, rowOf3 : winSets.indexOf(x)});
+	} else {
+		let bestScore = 10000;
+		for(let i = 0; i < moves.length; i++) {
+			if (moves[i].score < bestScore) {
+				bestScore = moves[i].score;
+				bestMove = i;
+			}
 		}
-	});
-
-	if (!winner && allMoves.length === 9) {
-		tieGame();
-		winner = 'tie';
 	}
-	return winner;
+
+	return moves[bestMove];
 }
-
-const winSets = [
-	[sq0,sq1,sq2],
-	[sq3,sq4,sq5],
-	[sq6,sq7,sq8],
-	[sq0,sq3,sq6],
-	[sq1,sq4,sq7],
-	[sq2,sq5,sq8],
-	[sq0,sq4,sq8],
-	[sq2,sq4,sq6]
-];
-
-function gameWon(winner){
-	if (!winner) {
-		console.log('Pushed Game');
-		tieGame();
-		return;
-	}
-	popup.textContent =  winner.name + " wins!!!";
-	popup.style.display = 'block';
-	squares.forEach(e => e.onclick = null);
-
-
-	winSets[winner.rowOf3].forEach(e => e.className += ' win');//note the space added before the class name
-
-
-
-}
-
-function tieGame(){
-	popup.style.display = 'block';
-	popup.textContent = 'Tie Game';
-	setTimeout(setupBoard, 1500);
-}
+startGame();
