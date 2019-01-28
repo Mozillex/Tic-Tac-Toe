@@ -1,3 +1,5 @@
+'use strict';
+
 let positions;
 let  p1 = 'X';
 let  p2 = 'O';
@@ -62,9 +64,10 @@ function takeTurn(squareId, player) {
 function checkWin(board, player) {
   let plays = board.reduce((a, e, i) => (e === player) ? a.concat(i) : a, []);
   let  winner = null;
+  
   for (let [index, win] of winSets.entries()) {
-    if (win.every(elem => plays.indexOf(elem) > -1)) {
-       winner = {index: index, player: player};
+    if (win.every((elem) => plays.indexOf(elem) > -1)) {
+      winner = {index: index, player: player};
       break;
     }
   }
@@ -103,9 +106,9 @@ function bestSpot(){
 function checkTie() {
   if (openSquares().length === 0){
     for(let i = 0; i< squares.length; i++) {
-    squares[i].style.color = '#757575';
-    squares[i].removeEventListener('click',p1Move, false);
-    };
+      squares[i].style.color = '#757575';
+      squares[i].removeEventListener('click',p1Move, false);
+    }
     declareWinner("Tie game");
     return true;
   }
